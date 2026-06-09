@@ -5,6 +5,10 @@ allprojects {
     }
 }
 
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.android")
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

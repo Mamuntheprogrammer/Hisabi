@@ -105,9 +105,6 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
       );
 
       await exportPdf(context, reportData);
-      if (context.mounted) {
-        scaffold.showSnackBar(const SnackBar(content: Text('PDF report generated')));
-      }
     } catch (e) {
       if (context.mounted) {
         scaffold.showSnackBar(SnackBar(content: Text('Export failed: $e')));

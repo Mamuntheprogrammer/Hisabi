@@ -1,9 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/category.dart';
 import '../../models/account.dart';
@@ -80,23 +79,23 @@ Future<void> exportPdf(BuildContext context, ReportData data) async {
     ),
   );
 
-  final dir = await getTemporaryDirectory();
-  final dateStr = DateTime.now().millisecondsSinceEpoch.toString();
-  final file = File('${dir.path}/hisabi_report_$dateStr.pdf');
   final pdfBytes = await doc.save();
-  await file.writeAsBytes(pdfBytes);
 
-  try {
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: 'Hisabi Financial Report',
+  final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
+  final result = await FilePicker.saveFile(
+    dialogTitle: 'Save PDF report',
+    fileName: 'hisabi_report_$dateStr.pdf',
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+    bytes: pdfBytes,
+  );
+
+  if (result == null) return;
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('PDF report saved')),
     );
-  } catch (e) {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('PDF saved. Share failed: $e')),
-      );
-    }
   }
 }
 

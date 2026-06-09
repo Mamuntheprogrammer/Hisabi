@@ -243,6 +243,24 @@ class DatabaseHelper {
     await batch.commit(noResult: true);
   }
 
+  Future<void> resetAllData() async {
+    final db = await database;
+    await db.rawQuery('PRAGMA foreign_keys = OFF');
+    await db.delete('bazar_items');
+    await db.delete('recurring_rules');
+    await db.delete('debts');
+    await db.delete('transactions');
+    await db.delete('bazar_lists');
+    await db.delete('income_sources');
+    await db.delete('budgets');
+    await db.delete('savings_goals');
+    await db.delete('accounts');
+    await db.delete('categories');
+    await db.rawQuery('PRAGMA foreign_keys = ON');
+    await _seedCategories(db);
+    await _seedDefaultAccounts(db);
+  }
+
   Future<void> _seedDefaultAccounts(Database db) async {
     await db.insert('accounts', {
       'name': 'Cash on Hand',

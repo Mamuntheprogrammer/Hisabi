@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:sqflite/sqflite.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -148,6 +151,18 @@ class SettingsScreen extends StatelessWidget {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                   onTap: () => _showRestoreDialog(context),
                 ),
+                const Divider(height: 1, indent: 72, endIndent: 16),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                  ),
+                  title: const Text('Reset All Data'),
+                  subtitle: const Text('Delete all data and start fresh'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => _showResetConfirmDialog(context),
+                ),
               ],
             ),
           ),
@@ -240,9 +255,22 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _createBackup(BuildContext context) async {
     final scaffold = ScaffoldMessenger.of(context);
     try {
-      final path = await BackupManager.createBackup();
+      final dbPath = await getDatabasesPath();
+      final dbFile = File('$dbPath/hisabi.db');
+      if (!await dbFile.exists()) {
+        throw Exception('Database file not found');
+      }
+      final bytes = await dbFile.readAsBytes();
+      final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
+      final result = await FilePicker.saveFile(
+        dialogTitle: 'Save backup file',
+        fileName: 'hisabi_backup_$dateStr.db',
+        type: FileType.any,
+        bytes: bytes,
+      );
+      if (result == null) return;
       if (context.mounted) {
-        scaffold.showSnackBar(SnackBar(content: Text('Backup created: $path')));
+        scaffold.showSnackBar(const SnackBar(content: Text('Backup saved')));
       }
     } catch (e) {
       if (context.mounted) {
@@ -349,6 +377,18 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showResetConfirmDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _ResetConfirmDialog(),
+    );
+    if (confirmed == true && context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const _ResetProcessingScreen()),
+      );
+    }
   }
 
   void _showCurrencyPicker(BuildContext context, SettingsProvider settings) {
@@ -574,6 +614,77 @@ class _StatItem extends StatelessWidget {
         Text(value, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
       ],
+    );
+  }
+}
+
+class _ResetConfirmDialog extends StatefulWidget {
+  const _ResetConfirmDialog();
+
+  @override
+  State<_ResetConfirmDialog> createState() => _ResetConfirmDialogState();
+}
+
+class _ResetConfirmDialogState extends State<_ResetConfirmDialog> {
+  final ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Reset All Data?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('This will delete ALL transactions, accounts, categories, and other data. This cannot be undone.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: ctrl,
+            decoration: const InputDecoration(
+              labelText: 'Type "Rest" to confirm',
+              border: OutlineInputBorder(),
+            ),
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: ctrl.text.trim() == 'Rest' ? () => Navigator.pop(context, true) : null,
+          child: const Text('Reset'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetProcessingScreen extends StatelessWidget {
+  const _ResetProcessingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final db = context.read<DatabaseProvider>();
+    Future.microtask(() async {
+      try {
+        await db.resetAllData();
+      } catch (_) {}
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('All data has been reset')),
+        );
+        Navigator.of(context).pop();
+      }
+    });
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

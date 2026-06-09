@@ -64,17 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () => context.read<ThemeProvider>().toggleTheme(),
                   ),
                 ),
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.notifications_outlined, size: 20),
-                    onPressed: () {},
-                  ),
-                ),
+
               ],
             )
           : null,

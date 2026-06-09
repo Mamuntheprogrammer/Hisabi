@@ -343,73 +343,25 @@ class _ItemInputRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
+      color: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Expanded(
-                  flex: 3,
                   child: TextField(
                     controller: item.nameCtrl,
                     decoration: const InputDecoration(
-                      hintText: 'Item name',
+                      labelText: 'Item Name',
                       isDense: true,
                       border: OutlineInputBorder(),
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 56,
-                  child: TextField(
-                    controller: item.qtyCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Qty',
-                      isDense: true,
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 90,
-                  child: DropdownButtonFormField<String>(
-                    value: item.unit,
-                    isDense: true,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    ),
-                    items: Unit.units
-                        .map((u) => DropdownMenuItem(
-                            value: u['en'],
-                            child: Text(u['en']!, style: const TextStyle(fontSize: 12))))
-                        .toList(),
-                    onChanged: (v) => item.unit = v ?? 'pcs',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 70,
-                  child: TextField(
-                    controller: item.priceCtrl,
-                    decoration: const InputDecoration(
-                      hintText: '৳',
-                      isDense: true,
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                    ),
-                    keyboardType: TextInputType.number,
+                    textCapitalization: TextCapitalization.words,
                   ),
                 ),
                 IconButton(
@@ -418,6 +370,61 @@ class _ItemInputRow extends StatelessWidget {
                   onPressed: onRemove,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: item.qtyCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantity',
+                      hintText: '1',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 100,
+                  child: DropdownButtonFormField<String>(
+                    value: item.unit,
+                    isDense: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Unit',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    ),
+                    items: Unit.units
+                        .map((u) => DropdownMenuItem(
+                            value: u['en'],
+                            child: Text(u['en']!, style: const TextStyle(fontSize: 13))))
+                        .toList(),
+                    onChanged: (v) => item.unit = v ?? 'pcs',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: item.priceCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Est. Price (৳)',
+                      hintText: '0',
+                      isDense: true,
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
                 ),
               ],
             ),
@@ -477,48 +484,60 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
         actions: [
           PopupMenuButton<String>(
             onSelected: (v) => _handleAction(v, db),
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
-                value: 'add',
-                child: ListTile(
-                  leading: Icon(Icons.add),
-                  title: Text('Add Item'),
-                  dense: true,
+            itemBuilder: (ctx) {
+              final items = <PopupMenuEntry<String>>[];
+              if (!widget.list.isCompleted) {
+                items.addAll([
+                  const PopupMenuItem(
+                    value: 'add',
+                    child: ListTile(
+                      leading: Icon(Icons.add),
+                      title: Text('Add Item'),
+                      dense: true,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'duplicate',
+                    child: ListTile(
+                      leading: Icon(Icons.copy),
+                      title: Text('Duplicate'),
+                      dense: true,
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'template',
+                    child: ListTile(
+                      leading: Icon(Icons.bookmark),
+                      title: Text('Save as Template'),
+                      dense: true,
+                    ),
+                  ),
+                ]);
+              }
+              if (!widget.list.isCompleted) {
+                items.add(
+                  const PopupMenuItem(
+                    value: 'convert',
+                    child: ListTile(
+                      leading: Icon(Icons.receipt),
+                      title: Text('Convert to Expense'),
+                      dense: true,
+                    ),
+                  ),
+                );
+              }
+              items.addAll([
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete, color: Colors.red),
+                    title: Text('Delete', style: TextStyle(color: Colors.red)),
+                    dense: true,
+                  ),
                 ),
-              ),
-              const PopupMenuItem(
-                value: 'duplicate',
-                child: ListTile(
-                  leading: Icon(Icons.copy),
-                  title: Text('Duplicate'),
-                  dense: true,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'template',
-                child: ListTile(
-                  leading: Icon(Icons.bookmark),
-                  title: Text('Save as Template'),
-                  dense: true,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'convert',
-                child: ListTile(
-                  leading: Icon(Icons.receipt),
-                  title: Text('Convert to Expense'),
-                  dense: true,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: ListTile(
-                  leading: Icon(Icons.delete, color: Colors.red),
-                  title: Text('Delete', style: TextStyle(color: Colors.red)),
-                  dense: true,
-                ),
-              ),
-            ],
+              ]);
+              return items;
+            },
           ),
         ],
       ),
@@ -593,6 +612,7 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
                 itemCount: _items.length,
                 itemBuilder: (ctx, i) => _ShoppingItemTile(
                   item: _items[i],
+                  isListCompleted: widget.list.isCompleted,
                   onChanged: () => _loadItems(),
                   db: db,
                 ),
@@ -605,6 +625,14 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
   }
 
   Future<void> _handleAction(String action, DatabaseProvider db) async {
+    if (widget.list.isCompleted && (action == 'add' || action == 'duplicate' || action == 'template')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot edit a completed list')),
+        );
+      }
+      return;
+    }
     switch (action) {
       case 'add':
         _showAddItemDialog(db);
@@ -696,22 +724,27 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
             TextField(
               controller: nameCtrl,
               decoration: const InputDecoration(
-                  labelText: 'Item name', border: OutlineInputBorder()),
+                  labelText: 'Item Name',
+                  border: OutlineInputBorder()),
+              textCapitalization: TextCapitalization.words,
+              autofocus: true,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: qtyCtrl,
                     decoration: const InputDecoration(
-                        labelText: 'Qty', border: OutlineInputBorder()),
+                        labelText: 'Quantity',
+                        hintText: '1',
+                        border: OutlineInputBorder()),
                     keyboardType: TextInputType.number,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 SizedBox(
-                  width: 90,
+                  width: 100,
                   child: DropdownButtonFormField<String>(
                     value: unit,
                     isDense: true,
@@ -723,21 +756,21 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
                     items: Unit.units
                         .map((u) => DropdownMenuItem(
                             value: u['en'],
-                            child: Text(u['en']!, style: const TextStyle(fontSize: 12))))
+                            child: Text(u['en']!, style: const TextStyle(fontSize: 13))))
                         .toList(),
                     onChanged: (v) => unit = v ?? 'pcs',
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: priceCtrl,
-                    decoration: const InputDecoration(
-                        labelText: '৳ price', border: OutlineInputBorder()),
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: priceCtrl,
+              decoration: const InputDecoration(
+                  labelText: 'Estimated Price (৳)',
+                  hintText: '0',
+                  border: OutlineInputBorder()),
+              keyboardType: TextInputType.number,
             ),
           ],
         ),
@@ -922,10 +955,12 @@ class _Summary extends StatelessWidget {
 
 class _ShoppingItemTile extends StatefulWidget {
   final BazarItem item;
+  final bool isListCompleted;
   final VoidCallback onChanged;
   final DatabaseProvider db;
   const _ShoppingItemTile({
     required this.item,
+    required this.isListCompleted,
     required this.onChanged,
     required this.db,
   });
@@ -972,7 +1007,7 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
 
     return Dismissible(
       key: ValueKey(item.id),
-      direction: DismissDirection.endToStart,
+      direction: widget.isListCompleted ? DismissDirection.none : DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
@@ -983,7 +1018,7 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
         padding: const EdgeInsets.only(right: 24),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      confirmDismiss: (_) async {
+      confirmDismiss: widget.isListCompleted ? null : (_) async {
         await widget.db.deleteBazarItem(item.id!);
         widget.onChanged();
         return false;
@@ -992,7 +1027,7 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
         margin: const EdgeInsets.only(bottom: 6),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _showEditDialog(context),
+          onTap: widget.isListCompleted ? null : () => _showEditDialog(context),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
@@ -1000,7 +1035,7 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
                 Checkbox(
                   value: item.isBought,
                   activeColor: AppColors.income,
-                  onChanged: (v) async {
+                  onChanged: widget.isListCompleted ? null : (v) async {
                     await widget.db
                         .updateBazarItem(item.copyWith(isBought: v ?? false));
                     widget.onChanged();
@@ -1046,6 +1081,7 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
                   width: 80,
                   child: TextField(
                     controller: _actualPriceCtrl,
+                    readOnly: widget.isListCompleted,
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: 'Actual',
@@ -1058,7 +1094,7 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
                           .withValues(alpha: 0.5),
                     ),
                     keyboardType: TextInputType.number,
-                    onSubmitted: (v) async {
+                    onSubmitted: widget.isListCompleted ? null : (v) async {
                       final p = double.tryParse(v);
                       if (p != null) {
                         await widget.db

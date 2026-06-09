@@ -445,4 +445,19 @@ class DatabaseProvider extends ChangeNotifier {
         .toList()
       ..sort((a, b) => b.date.compareTo(a.date));
   }
+
+  Future<void> resetAllData() async {
+    await _db.resetAllData();
+    final db = await _db.database;
+    _accounts = (await db.query('accounts', orderBy: 'createdAt ASC')).map((m) => Account.fromMap(m)).toList();
+    _categories = (await db.query('categories', orderBy: 'id ASC')).map((m) => Category.fromMap(m)).toList();
+    _transactions = (await db.query('transactions', orderBy: 'date DESC')).map((m) => Transaction.fromMap(m)).toList();
+    _budgets = (await db.query('budgets')).map((m) => Budget.fromMap(m)).toList();
+    _debts = (await db.query('debts', orderBy: 'date DESC')).map((m) => Debt.fromMap(m)).toList();
+    _savingsGoals = (await db.query('savings_goals', orderBy: 'createdAt DESC')).map((m) => SavingsGoal.fromMap(m)).toList();
+    _incomeSources = (await db.query('income_sources', orderBy: 'id ASC')).map((m) => IncomeSource.fromMap(m)).toList();
+    _bazarLists = (await db.query('bazar_lists', orderBy: 'date DESC')).map((m) => BazarList.fromMap(m)).toList();
+    _recurringRules = (await db.query('recurring_rules', orderBy: 'nextDate ASC')).map((m) => RecurringRule.fromMap(m)).toList();
+    notifyListeners();
+  }
 }
