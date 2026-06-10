@@ -8,6 +8,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../accounts/accounts_screen.dart';
 import '../bazar/bazar_lists_screen.dart';
+import '../debts/debts_screen.dart';
 import '../reports/reports_screen.dart';
 import '../settings/settings_screen.dart';
 import '../transactions/transactions_screen.dart';
@@ -38,9 +39,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         body = const ReportsScreen();
         break;
       case 3:
-        body = const BazarListsScreen();
+        body = const DebtsScreen();
         break;
       case 4:
+        body = const BazarListsScreen();
+        break;
+      case 5:
         body = const SettingsScreen();
         break;
       default:
@@ -80,6 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Dashboard'),
           NavigationDestination(icon: Icon(Icons.account_balance_outlined), selectedIcon: Icon(Icons.account_balance), label: 'Accounts'),
           NavigationDestination(icon: Icon(Icons.bar_chart_outlined), selectedIcon: Icon(Icons.bar_chart), label: 'Reports'),
+          NavigationDestination(icon: Icon(Icons.money_off_outlined), selectedIcon: Icon(Icons.money_off), label: 'Debt'),
           NavigationDestination(icon: Icon(Icons.shopping_cart_outlined), selectedIcon: Icon(Icons.shopping_cart), label: 'Bazar'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Settings'),
         ],

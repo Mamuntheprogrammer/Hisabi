@@ -8,6 +8,7 @@ import '../../models/transaction.dart';
 import '../../models/account.dart';
 import '../../models/category.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/export_pdf.dart';
 import '../../core/theme/app_theme.dart';
 
 class BazarListsScreen extends StatefulWidget {
@@ -481,8 +482,13 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.list.name),
-        actions: [
-          PopupMenuButton<String>(
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf),
+              tooltip: 'Export PDF',
+              onPressed: () => exportBazarListPdf(context, widget.list, _items),
+            ),
+            PopupMenuButton<String>(
             onSelected: (v) => _handleAction(v, db),
             itemBuilder: (ctx) {
               final items = <PopupMenuEntry<String>>[];

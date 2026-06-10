@@ -203,6 +203,8 @@ IconData _iconFromString(String icon) {
     case 'agriculture': return Icons.agriculture;
     case 'savings': return Icons.savings;
     case 'piggy_bank': return Icons.savings;
+    case 'arrow_upward': return Icons.arrow_upward;
+    case 'arrow_downward': return Icons.arrow_downward;
     default: return Icons.more_horiz;
   }
 }

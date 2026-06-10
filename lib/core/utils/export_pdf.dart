@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/category.dart';
 import '../../models/account.dart';
+import '../../models/debt.dart';
+import '../../models/bazar_list.dart';
+import '../../models/bazar_item.dart';
 
 class ReportData {
   final DateTime startDate;
@@ -379,4 +382,265 @@ pw.Widget _buildTransactionTable(ReportData data) {
 
 String _fmt(double amount) {
   return amount.toStringAsFixed(0);
+}
+
+Future<void> exportDebtPdf(BuildContext context, List<Debt> debts) async {
+  final doc = pw.Document();
+
+  doc.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(28),
+      header: (ctx) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text('Hisabi', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFF00695C))),
+          pw.Text('Debt Report', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey)),
+          pw.Text('Generated: ${DateFormat('dd MMM yyyy HH:mm').format(DateTime.now())}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+          pw.SizedBox(height: 4),
+          pw.Divider(color: PdfColor.fromInt(0xFF00695C)),
+        ],
+      ),
+      footer: (ctx) => pw.Container(
+        alignment: pw.Alignment.centerRight,
+        margin: const pw.EdgeInsets.only(top: 8),
+        child: pw.Text('Page ${ctx.pageNumber}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+      ),
+      build: (ctx) => [
+        _buildDebtSummary(debts),
+        pw.SizedBox(height: 20),
+        if (debts.where((d) => d.type == 'owe').isNotEmpty) ...[
+          pw.Text('I Owe', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFF00695C))),
+          pw.SizedBox(height: 8),
+          _buildDebtTable(debts.where((d) => d.type == 'owe').toList()),
+          pw.SizedBox(height: 20),
+        ],
+        if (debts.where((d) => d.type == 'owed').isNotEmpty) ...[
+          pw.Text("I'm Owed", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFF00695C))),
+          pw.SizedBox(height: 8),
+          _buildDebtTable(debts.where((d) => d.type == 'owed').toList()),
+        ],
+      ],
+    ),
+  );
+
+  final pdfBytes = await doc.save();
+
+  final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
+  final result = await FilePicker.saveFile(
+    dialogTitle: 'Save Debt PDF report',
+    fileName: 'hisabi_debt_report_$dateStr.pdf',
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+    bytes: pdfBytes,
+  );
+
+  if (result == null) return;
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Debt PDF report saved')),
+    );
+  }
+}
+
+pw.Widget _buildDebtSummary(List<Debt> debts) {
+  final totalOwe = debts.where((d) => d.type == 'owe').fold(0.0, (s, d) => s + d.remaining);
+  final totalOwed = debts.where((d) => d.type == 'owed').fold(0.0, (s, d) => s + d.remaining);
+  final totalAmount = debts.fold(0.0, (s, d) => s + d.amount);
+  final totalPaid = debts.fold(0.0, (s, d) => s + d.amountPaid);
+
+  return pw.Container(
+    padding: const pw.EdgeInsets.all(14),
+    decoration: pw.BoxDecoration(
+      color: PdfColor.fromInt(0xFFF5F7FA),
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+    ),
+    child: pw.Column(
+      children: [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            _summaryItem('Total Debt', _fmt(totalAmount), PdfColor.fromInt(0xFF00695C)),
+            _summaryItem('Total Paid', _fmt(totalPaid), PdfColors.green700),
+            _summaryItem('I Owe', _fmt(totalOwe), PdfColors.red700),
+            _summaryItem("I'm Owed", _fmt(totalOwed), PdfColors.green700),
+          ],
+        ),
+        pw.SizedBox(height: 6),
+        pw.Text('Total debts: ${debts.length}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+      ],
+    ),
+  );
+}
+
+pw.Widget _buildDebtTable(List<Debt> debts) {
+  final hStyle = pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white);
+  final cStyle = const pw.TextStyle(fontSize: 8);
+
+  final rows = <pw.TableRow>[
+    pw.TableRow(
+      decoration: pw.BoxDecoration(color: PdfColor.fromInt(0xFF00695C)),
+      children: ['Person', 'Amount', 'Paid', 'Remaining', 'Status', 'Due Date'].map((h) =>
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(h, style: hStyle))
+      ).toList(),
+    ),
+  ];
+
+  for (final d in debts) {
+    final statusColor = d.isCleared ? PdfColors.green700 : (d.status == 'partial' ? PdfColors.orange : PdfColors.red700);
+    rows.add(pw.TableRow(
+      children: [
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(d.personName, style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(_fmt(d.amount), style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(_fmt(d.amountPaid), style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(_fmt(d.remaining), style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(d.status.toUpperCase(), style: pw.TextStyle(fontSize: 8, color: statusColor))),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(d.dueDate?.toString().substring(0, 10) ?? '-', style: cStyle)),
+      ],
+    ));
+  }
+
+  return pw.Table(
+    border: pw.TableBorder.all(color: PdfColors.grey300),
+    columnWidths: const {
+      0: pw.FlexColumnWidth(2.5),
+      1: pw.FlexColumnWidth(1.5),
+      2: pw.FlexColumnWidth(1.5),
+      3: pw.FlexColumnWidth(1.5),
+      4: pw.FlexColumnWidth(1.5),
+      5: pw.FlexColumnWidth(1.5),
+    },
+    children: rows,
+  );
+}
+
+Future<void> exportBazarListPdf(BuildContext context, BazarList list, List<BazarItem> items) async {
+  final doc = pw.Document();
+
+  final actualTotal = items.fold(0.0, (s, i) => s + (i.priceActual ?? (i.priceEstimated * i.quantity)));
+  final estTotal = items.fold(0.0, (s, i) => s + (i.priceEstimated * i.quantity));
+  final boughtCount = items.where((i) => i.isBought).length;
+
+  doc.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(28),
+      header: (ctx) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text('Hisabi', style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFF00695C))),
+          pw.Text('Bazar List: ${list.name}', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey)),
+          pw.Text('Date: ${DateFormat('dd MMM yyyy').format(list.date)}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+          pw.SizedBox(height: 4),
+          pw.Divider(color: PdfColor.fromInt(0xFF00695C)),
+        ],
+      ),
+      footer: (ctx) => pw.Container(
+        alignment: pw.Alignment.centerRight,
+        margin: const pw.EdgeInsets.only(top: 8),
+        child: pw.Text('Page ${ctx.pageNumber}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+      ),
+      build: (ctx) => [
+        _buildBazarSummary(list, estTotal, actualTotal, boughtCount, items.length),
+        pw.SizedBox(height: 20),
+        pw.Text('Items', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColor.fromInt(0xFF00695C))),
+        pw.SizedBox(height: 8),
+        _buildBazarItemTable(items),
+      ],
+    ),
+  );
+
+  final pdfBytes = await doc.save();
+
+  final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
+  final sanitizedName = list.name.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(' ', '_');
+  final result = await FilePicker.saveFile(
+    dialogTitle: 'Save Bazar list PDF',
+    fileName: 'bazar_${sanitizedName}_$dateStr.pdf',
+    type: FileType.custom,
+    allowedExtensions: ['pdf'],
+    bytes: pdfBytes,
+  );
+
+  if (result == null) return;
+
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Bazar list PDF saved')),
+    );
+  }
+}
+
+pw.Widget _buildBazarSummary(BazarList list, double estTotal, double actualTotal, int boughtCount, int totalItems) {
+  return pw.Container(
+    padding: const pw.EdgeInsets.all(14),
+    decoration: pw.BoxDecoration(
+      color: PdfColor.fromInt(0xFFF5F7FA),
+      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+    ),
+    child: pw.Column(
+      children: [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            _summaryItem('Items', '$totalItems', PdfColor.fromInt(0xFF00695C)),
+            _summaryItem('Bought', '$boughtCount', PdfColors.green700),
+            _summaryItem('Estimated', _fmt(estTotal), PdfColors.blue700),
+            _summaryItem('Actual', _fmt(actualTotal), PdfColors.red700),
+          ],
+        ),
+        pw.SizedBox(height: 6),
+        pw.Text('Status: ${list.isCompleted ? "Completed" : "In Progress"}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey)),
+      ],
+    ),
+  );
+}
+
+pw.Widget _buildBazarItemTable(List<BazarItem> items) {
+  final hStyle = pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.white);
+  final cStyle = const pw.TextStyle(fontSize: 8);
+
+  final rows = <pw.TableRow>[
+    pw.TableRow(
+      decoration: pw.BoxDecoration(color: PdfColor.fromInt(0xFF00695C)),
+      children: ['#', 'Item', 'Qty', 'Unit', 'Est. Price', 'Actual', 'Status'].map((h) =>
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(h, style: hStyle))
+      ).toList(),
+    ),
+  ];
+
+  for (int i = 0; i < items.length; i++) {
+    final item = items[i];
+    final estTotal = item.priceEstimated * item.quantity;
+    final actTotal = item.priceActual != null ? item.priceActual! * item.quantity : null;
+    final status = item.isBought ? '✓' : '✗';
+    final statusColor = item.isBought ? PdfColors.green700 : PdfColors.red700;
+
+    rows.add(pw.TableRow(
+      children: [
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text('${i + 1}', style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(item.name, style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text('${item.quantity}'.replaceAll('.0', ''), style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(item.unit, style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(_fmt(estTotal), style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(actTotal != null ? _fmt(actTotal) : '-', style: cStyle)),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(status, style: pw.TextStyle(fontSize: 8, color: statusColor))),
+      ],
+    ));
+  }
+
+  return pw.Table(
+    border: pw.TableBorder.all(color: PdfColors.grey300),
+    columnWidths: const {
+      0: pw.FlexColumnWidth(0.5),
+      1: pw.FlexColumnWidth(2.5),
+      2: pw.FlexColumnWidth(1),
+      3: pw.FlexColumnWidth(1.2),
+      4: pw.FlexColumnWidth(1.2),
+      5: pw.FlexColumnWidth(1.2),
+      6: pw.FlexColumnWidth(0.8),
+    },
+    children: rows,
+  );
 }

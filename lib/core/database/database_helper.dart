@@ -222,6 +222,8 @@ class DatabaseHelper {
       {'name': 'Travel', 'nameBn': 'ভ্রমণ', 'type': 'expense', 'icon': 'flight', 'color': 4283215696},
       {'name': 'Insurance', 'nameBn': 'বীমা', 'type': 'expense', 'icon': 'security', 'color': 4288531808},
       {'name': 'Loan Payment', 'nameBn': 'কিস্তি', 'type': 'expense', 'icon': 'payments', 'color': 4294198070},
+      {'name': 'Debt Owe', 'nameBn': 'ধার পরিশোধ', 'type': 'expense', 'icon': 'arrow_upward', 'color': 4283215696},
+      {'name': 'Debt Owed', 'nameBn': 'প্রাপ্য ধার', 'type': 'expense', 'icon': 'arrow_downward', 'color': 4280391411},
       {'name': 'Other', 'nameBn': 'অন্যান্য', 'type': 'expense', 'icon': 'more_horiz', 'color': 4288216960},
     ];
 
