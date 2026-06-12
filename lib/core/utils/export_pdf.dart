@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:file_picker/file_picker.dart';
+import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/category.dart';
@@ -83,23 +84,50 @@ Future<void> exportPdf(BuildContext context, ReportData data) async {
   );
 
   final pdfBytes = await doc.save();
+  if (!context.mounted) return;
 
   final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
-  final result = await FilePicker.saveFile(
-    dialogTitle: 'Save PDF report',
-    fileName: 'hisabi_report_$dateStr.pdf',
-    type: FileType.custom,
-    allowedExtensions: ['pdf'],
-    bytes: pdfBytes,
+  final fileName = 'hisabi_report_$dateStr.pdf';
+
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (ctx) => Scaffold(
+        appBar: AppBar(
+          title: const Text('PDF Preview'),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              tooltip: 'Save',
+              onPressed: () async {
+                final result = await FilePicker.saveFile(
+                  dialogTitle: 'Save PDF report',
+                  fileName: fileName,
+                  type: FileType.custom,
+                  allowedExtensions: ['pdf'],
+                  bytes: pdfBytes,
+                );
+                if (result != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('PDF report saved')),
+                  );
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                }
+              },
+            ),
+          ],
+        ),
+        body: PdfPreview(
+          build: (format) async => pdfBytes,
+          pdfFileName: fileName,
+        ),
+      ),
+    ),
   );
-
-  if (result == null) return;
-
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PDF report saved')),
-    );
-  }
 }
 
 pw.Widget _buildHeader(DateTime start, DateTime end) {
@@ -425,23 +453,50 @@ Future<void> exportDebtPdf(BuildContext context, List<Debt> debts) async {
   );
 
   final pdfBytes = await doc.save();
+  if (!context.mounted) return;
 
   final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
-  final result = await FilePicker.saveFile(
-    dialogTitle: 'Save Debt PDF report',
-    fileName: 'hisabi_debt_report_$dateStr.pdf',
-    type: FileType.custom,
-    allowedExtensions: ['pdf'],
-    bytes: pdfBytes,
+  final fileName = 'hisabi_debt_report_$dateStr.pdf';
+
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (ctx) => Scaffold(
+        appBar: AppBar(
+          title: const Text('PDF Preview'),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              tooltip: 'Save',
+              onPressed: () async {
+                final result = await FilePicker.saveFile(
+                  dialogTitle: 'Save Debt PDF report',
+                  fileName: fileName,
+                  type: FileType.custom,
+                  allowedExtensions: ['pdf'],
+                  bytes: pdfBytes,
+                );
+                if (result != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Debt PDF report saved')),
+                  );
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                }
+              },
+            ),
+          ],
+        ),
+        body: PdfPreview(
+          build: (format) async => pdfBytes,
+          pdfFileName: fileName,
+        ),
+      ),
+    ),
   );
-
-  if (result == null) return;
-
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debt PDF report saved')),
-    );
-  }
 }
 
 pw.Widget _buildDebtSummary(List<Debt> debts) {
@@ -552,24 +607,51 @@ Future<void> exportBazarListPdf(BuildContext context, BazarList list, List<Bazar
   );
 
   final pdfBytes = await doc.save();
+  if (!context.mounted) return;
 
   final dateStr = DateFormat('yyyy-MM-dd_HHmmss').format(DateTime.now());
   final sanitizedName = list.name.replaceAll(RegExp(r'[^\w\s]'), '').replaceAll(' ', '_');
-  final result = await FilePicker.saveFile(
-    dialogTitle: 'Save Bazar list PDF',
-    fileName: 'bazar_${sanitizedName}_$dateStr.pdf',
-    type: FileType.custom,
-    allowedExtensions: ['pdf'],
-    bytes: pdfBytes,
+  final fileName = 'bazar_${sanitizedName}_$dateStr.pdf';
+
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (ctx) => Scaffold(
+        appBar: AppBar(
+          title: const Text('PDF Preview'),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              tooltip: 'Save',
+              onPressed: () async {
+                final result = await FilePicker.saveFile(
+                  dialogTitle: 'Save Bazar list PDF',
+                  fileName: fileName,
+                  type: FileType.custom,
+                  allowedExtensions: ['pdf'],
+                  bytes: pdfBytes,
+                );
+                if (result != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Bazar list PDF saved')),
+                  );
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                }
+              },
+            ),
+          ],
+        ),
+        body: PdfPreview(
+          build: (format) async => pdfBytes,
+          pdfFileName: fileName,
+        ),
+      ),
+    ),
   );
-
-  if (result == null) return;
-
-  if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Bazar list PDF saved')),
-    );
-  }
 }
 
 pw.Widget _buildBazarSummary(BazarList list, double estTotal, double actualTotal, int boughtCount, int totalItems) {
@@ -614,8 +696,7 @@ pw.Widget _buildBazarItemTable(List<BazarItem> items) {
     final item = items[i];
     final estTotal = item.priceEstimated * item.quantity;
     final actTotal = item.priceActual != null ? item.priceActual! * item.quantity : null;
-    final status = item.isBought ? '✓' : '✗';
-    final statusColor = item.isBought ? PdfColors.green700 : PdfColors.red700;
+    final status = item.isBought ? 'Done' : '';
 
     rows.add(pw.TableRow(
       children: [
@@ -625,7 +706,7 @@ pw.Widget _buildBazarItemTable(List<BazarItem> items) {
         pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(item.unit, style: cStyle)),
         pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(_fmt(estTotal), style: cStyle)),
         pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(actTotal != null ? _fmt(actTotal) : '-', style: cStyle)),
-        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(status, style: pw.TextStyle(fontSize: 8, color: statusColor))),
+        pw.Container(padding: const pw.EdgeInsets.all(5), child: pw.Text(status, style: cStyle)),
       ],
     ));
   }

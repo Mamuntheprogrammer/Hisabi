@@ -71,10 +71,13 @@ class _BazarListsScreenState extends State<BazarListsScreen> {
                 itemBuilder: (ctx, i) => _BazarListCard(list: lists[i], db: db),
               ),
             ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => _createNewList(context),
-        icon: const Icon(Icons.add),
-        label: const Text('New List'),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
@@ -197,6 +200,14 @@ class _CreateBazarListScreenState extends State<_CreateBazarListScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Bazar List')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => setState(() => _items.add(_ItemEntry())),
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, size: 28),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -627,6 +638,16 @@ class _BazarListDetailScreenState extends State<_BazarListDetailScreen> {
           ),
         ],
       ),
+      floatingActionButton: widget.list.isCompleted
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _showAddItemDialog(db),
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add, size: 28),
+            ),
     );
   }
 
@@ -1083,33 +1104,32 @@ class _ShoppingItemTileState extends State<_ShoppingItemTile> {
                       color: diff < 0 ? AppColors.income : AppColors.expense,
                     ),
                   ),
-                SizedBox(
-                  width: 80,
-                  child: TextField(
-                    controller: _actualPriceCtrl,
-                    readOnly: widget.isListCompleted,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: 'Actual',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      filled: true,
-                      fillColor: theme.colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.5),
+                  SizedBox(
+                    width: 80,
+                    child: TextField(
+                      controller: _actualPriceCtrl,
+                      readOnly: widget.isListCompleted,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        hintText: 'Actual',
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        filled: true,
+                        fillColor: AppTheme.primaryColor.withValues(alpha: 0.08),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onSubmitted: widget.isListCompleted ? null : (v) async {
+                        final p = double.tryParse(v);
+                        if (p != null) {
+                          await widget.db
+                              .updateBazarItem(item.copyWith(priceActual: p));
+                          widget.onChanged();
+                        }
+                      },
                     ),
-                    keyboardType: TextInputType.number,
-                    onSubmitted: widget.isListCompleted ? null : (v) async {
-                      final p = double.tryParse(v);
-                      if (p != null) {
-                        await widget.db
-                            .updateBazarItem(item.copyWith(priceActual: p));
-                        widget.onChanged();
-                      }
-                    },
                   ),
-                ),
               ],
             ),
           ),

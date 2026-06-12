@@ -52,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
-      extendBody: true,
+      extendBody: _currentIndex == 0,
       appBar: _currentIndex == 0
           ? AppBar(
               title: _ColorfulAppName(),
@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 20),
           _SectionHeader(title: 'Quick Actions'),
           const SizedBox(height: 10),
-          _QuickActions(context: context),
+          _QuickActions(onBazarTap: () => setState(() => _currentIndex = 4)),
           const SizedBox(height: 20),
           _SectionHeader(title: 'Recent Transactions'),
           const SizedBox(height: 10),
@@ -224,6 +224,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(width: 12),
                   Expanded(child: _ActionCard(icon: Icons.shopping_cart, label: 'Bazar', color: AppTheme.primaryColor, onTap: () {
                     Navigator.pop(ctx);
+                    setState(() => _currentIndex = 4);
                   })),
                 ],
               ),
@@ -400,8 +401,8 @@ class _StatBadge extends StatelessWidget {
 }
 
 class _QuickActions extends StatelessWidget {
-  final BuildContext context;
-  const _QuickActions({required this.context});
+  final VoidCallback onBazarTap;
+  const _QuickActions({required this.onBazarTap});
 
   @override
   Widget build(BuildContext context) {
@@ -413,7 +414,7 @@ class _QuickActions extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(child: _ActionCard(icon: Icons.swap_horiz, label: 'Transfer', color: AppColors.transfer, onTap: () => _add(context, 'transfer'))),
         const SizedBox(width: 10),
-        Expanded(child: _ActionCard(icon: Icons.shopping_cart, label: 'Bazar', color: AppTheme.primaryColor, onTap: () => _add(context, 'expense'))),
+        Expanded(child: _ActionCard(icon: Icons.shopping_cart, label: 'Bazar', color: AppTheme.primaryColor, onTap: onBazarTap)),
       ],
     );
   }
